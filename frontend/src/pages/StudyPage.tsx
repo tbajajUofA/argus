@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { BookOpen, Check, FileQuestion, Layers3, Mail, Sparkles, X } from 'lucide-react';
+import { BookOpen, FileQuestion, Layers3, Mail, Sparkles, X } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
 import { extractPages, listDocuments, listSections, study } from '../api';
 import PdfViewer from '../components/PdfViewer';

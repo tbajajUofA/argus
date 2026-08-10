@@ -1,4 +1,4 @@
-import { ArrowRight, BookOpen, Github, Sparkles } from 'lucide-react';
+import { ArrowRight, BookOpen, Code2, Sparkles } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
 
 const ERRORS: Record<string, string> = {
@@ -57,7 +57,7 @@ export default function LoginPage() {
           <ArrowRight size={17} aria-hidden />
         </a>
         <a href={REPO_URL} target="_blank" rel="noreferrer" className="login-repo">
-          <Github size={15} aria-hidden /> View source
+          <Code2 size={15} aria-hidden /> View source
         </a>
       </div>
     </div>

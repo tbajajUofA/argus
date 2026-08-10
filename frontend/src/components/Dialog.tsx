@@ -14,7 +14,9 @@ const focusableSelector =
 
 export default function Dialog({ open, onClose, labelledBy, children, className = '' }: Props) {
   const panelRef = useRef<HTMLDivElement>(null);
+  const onCloseRef = useRef(onClose);
   const reduceMotion = useReducedMotion();
+  onCloseRef.current = onClose;
 
   useEffect(() => {
     if (!open) return;
@@ -29,7 +31,7 @@ export default function Dialog({ open, onClose, labelledBy, children, className 
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
         event.preventDefault();
-        onClose();
+        onCloseRef.current();
         return;
       }
       if (event.key !== 'Tab' || !panelRef.current) return;
@@ -57,7 +59,7 @@ export default function Dialog({ open, onClose, labelledBy, children, className 
       document.body.style.overflow = previousOverflow;
       previousFocus?.focus();
     };
-  }, [open, onClose]);
+  }, [open]);
 
   return (
     <AnimatePresence>
