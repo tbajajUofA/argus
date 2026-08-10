@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
+import { BookOpen, Check, FileQuestion, Layers3, Mail, Sparkles, X } from 'lucide-react';
+import { useSearchParams } from 'react-router-dom';
 import { extractPages, listDocuments, listSections, study } from '../api';
 import PdfViewer from '../components/PdfViewer';
 import { useMe } from '../me';
@@ -9,8 +11,9 @@ type QuizItem = { question: string; answer: string; citations?: string[] };
 
 export default function StudyPage() {
   const me = useMe();
+  const [params] = useSearchParams();
   const [docs, setDocs] = useState<Document[]>([]);
-  const [docId, setDocId] = useState('');
+  const [docId, setDocId] = useState(params.get('document') || '');
   const [sections, setSections] = useState<DocumentSection[]>([]);
   const [sectionId, setSectionId] = useState('');
   const [mode, setMode] = useState<StudyMode>('quiz');
@@ -81,65 +84,76 @@ export default function StudyPage() {
   return (
     <div className="study-page">
       <header className="feed-header">
-        <h1>Study</h1>
-        <p className="feed-sub">
-          Pick a textbook chapter. Generate quiz, flashcards, or a summary — view here or email the pack.
-          {me && !me.is_admin && me.study.remaining_today != null
-            ? ` · Guest: ${me.study.remaining_today}/${me.study.daily_limit} left today`
-            : ''}
-        </p>
+        <p className="eyebrow">Focused learning</p>
+        <div className="page-heading-row">
+          <div>
+            <h1>Study</h1>
+            <p className="feed-sub">Choose a chapter and shape it into material that works for you.</p>
+          </div>
+          {me && !me.is_admin && me.study.remaining_today != null && (
+            <span className="usage-badge">{me.study.remaining_today} of {me.study.daily_limit} left</span>
+          )}
+        </div>
       </header>
 
       <div className="study-controls">
-        <label className="field-inline">
-          <span>Textbook</span>
-          <select value={docId} onChange={(e) => setDocId(e.target.value)}>
-            <option value="">Select textbook</option>
-            {readyDocs.map((d) => (
-              <option key={d.id} value={d.id}>
-                {d.title}
-              </option>
+        <div className="control-group">
+          <label className="field-inline">
+            <span><BookOpen size={15} aria-hidden /> Textbook</span>
+            <select value={docId} onChange={(e) => setDocId(e.target.value)}>
+              <option value="">Select textbook</option>
+              {readyDocs.map((d) => <option key={d.id} value={d.id}>{d.title}</option>)}
+            </select>
+          </label>
+          <label className="field-inline">
+            <span><Layers3 size={15} aria-hidden /> Chapter or section</span>
+            <select value={sectionId} onChange={(e) => setSectionId(e.target.value)} disabled={!sections.length}>
+              {!sections.length && <option value="">Whole book</option>}
+              {sections.map((s) => <option key={s.id} value={s.id}>{s.title} (p{s.start_page}–{s.end_page})</option>)}
+            </select>
+          </label>
+        </div>
+
+        <div>
+          <span className="control-label">Material</span>
+          <div className="segmented-control" role="group" aria-label="Study material">
+            {([
+              ['quiz', 'Quiz', FileQuestion],
+              ['flashcards', 'Cards', Layers3],
+              ['summary', 'Summary', Sparkles],
+            ] as const).map(([value, label, Icon]) => (
+              <button
+                key={value}
+                type="button"
+                className={mode === value ? 'active' : ''}
+                aria-pressed={mode === value}
+                onClick={() => setMode(value)}
+              >
+                <Icon size={16} aria-hidden /> {label}
+              </button>
             ))}
-          </select>
-        </label>
-        <label className="field-inline">
-          <span>Chapter / section</span>
-          <select
-            value={sectionId}
-            onChange={(e) => setSectionId(e.target.value)}
-            disabled={!sections.length}
-          >
-            {!sections.length && <option value="">Whole book (no sections yet)</option>}
-            {sections.map((s) => (
-              <option key={s.id} value={s.id}>
-                {s.title} (p{s.start_page}–{s.end_page})
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className="field-inline">
-          <span>Material</span>
-          <select value={mode} onChange={(e) => setMode(e.target.value as StudyMode)}>
-            <option value="quiz">Quiz</option>
-            <option value="flashcards">Flashcards</option>
-            <option value="summary">Summary</option>
-          </select>
-        </label>
-        <label className="check-inline">
-          <input type="checkbox" checked={emailMe} onChange={(e) => setEmailMe(e.target.checked)} />
-          Email me
-        </label>
-        <button type="button" className="btn btn-accent" disabled={!docId || busy} onClick={generate}>
-          {busy ? 'Generating…' : 'Generate'}
-        </button>
+          </div>
+        </div>
+
+        <div className="study-action-row">
+          <label className="switch-row">
+            <span><Mail size={17} aria-hidden /> Email me a copy</span>
+            <input type="checkbox" checked={emailMe} onChange={(e) => setEmailMe(e.target.checked)} />
+          </label>
+          <button type="button" className="btn btn-primary generate-button" disabled={!docId || busy} onClick={generate}>
+            <Sparkles size={17} aria-hidden />
+            {busy ? 'Generating…' : 'Generate'}
+          </button>
+        </div>
       </div>
 
-      {error && <p className="error-banner">{error}</p>}
+      {error && <p className="error-banner" role="alert">{error}</p>}
       {citationErrors.length > 0 && (
         <p className="warn-banner">Citation warnings: {citationErrors.join('; ')}</p>
       )}
 
-      <div className="study-results">
+      <div className="study-results" aria-busy={busy}>
+        {busy && <div className="generation-status" aria-live="polite"><span className="pulse-dot" />Building your study pack…</div>}
         {mode === 'quiz' && Array.isArray(structured?.items) ? (
           <div className="material-list">
             {(structured!.items as QuizItem[]).map((item, i) => (
@@ -193,7 +207,11 @@ export default function StudyPage() {
         ) : null}
 
         {!structured && !busy ? (
-          <p className="muted pad">Choose a chapter and hit Generate.</p>
+          <div className="empty-state">
+            <div className="empty-icon"><Sparkles size={25} aria-hidden /></div>
+            <p className="empty-title">Ready when you are</p>
+            <p className="muted">Choose a textbook, a chapter, and the material you want to create.</p>
+          </div>
         ) : null}
       </div>
 
@@ -201,8 +219,8 @@ export default function StudyPage() {
         <div className="pdf-dock">
           <div className="pdf-modal-bar">
             <span>Source PDF · p{pdfPage}</span>
-            <button type="button" className="btn-ghost" onClick={() => setPdfDocId(null)}>
-              Hide
+            <button type="button" className="icon-button compact" aria-label="Hide source PDF" onClick={() => setPdfDocId(null)}>
+              <X size={18} aria-hidden />
             </button>
           </div>
           <PdfViewer documentId={pdfDocId} page={pdfPage} />

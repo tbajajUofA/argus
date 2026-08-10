@@ -1,4 +1,5 @@
 import { Fragment, useEffect, useState } from 'react';
+import { Boxes, ChevronDown, ChevronUp, Database, ExternalLink, FileText } from 'lucide-react';
 import { getAdminChunks, getAdminConfig, getAdminStats, type AdminConfig, type AdminStats } from '../api';
 
 export default function AdminPage() {
@@ -37,44 +38,57 @@ export default function AdminPage() {
   };
 
   return (
-    <div>
-      <h1 className="page-title">Database</h1>
-      <p className="page-sub">Vector store stats and Supabase links</p>
+    <div className="admin-page">
+      <header className="page-header">
+        <p className="eyebrow">System inspector</p>
+        <h1 className="page-title">Database</h1>
+        <p className="page-sub">Monitor textbooks, vector coverage, and storage connections.</p>
+      </header>
 
       {config && (config.supabaseTableUrl || config.storageUrl) && (
-        <div className="panel" style={{ marginBottom: '1rem' }}>
-          <p className="section-label">Supabase dashboard</p>
+        <div className="panel dashboard-panel">
+          <div className="section-heading">
+            <div className="section-icon"><Database size={19} aria-hidden /></div>
+            <div><h2>Supabase dashboard</h2><p>Open the underlying data and file storage.</p></div>
+          </div>
           <div className="toolbar">
             {config.supabaseTableUrl && (
-              <a href={config.supabaseTableUrl} target="_blank" rel="noreferrer" className="btn btn-ghost">
-                Table editor
+              <a href={config.supabaseTableUrl} target="_blank" rel="noreferrer" className="btn btn-secondary">
+                Table editor <ExternalLink size={15} aria-hidden />
               </a>
             )}
             {config.storageUrl && (
-              <a href={config.storageUrl} target="_blank" rel="noreferrer" className="btn btn-ghost">
-                Storage bucket
+              <a href={config.storageUrl} target="_blank" rel="noreferrer" className="btn btn-secondary">
+                Storage bucket <ExternalLink size={15} aria-hidden />
               </a>
             )}
           </div>
         </div>
       )}
 
-      {error && <p className="login-error">{error}</p>}
+      {error && <p className="error-banner" role="alert">{error}</p>}
 
       {stats && (
         <>
           <div className="admin-stats-row">
-            <div>
+            <div className="admin-stat-card">
+              <div className="stat-icon"><FileText size={20} aria-hidden /></div>
               <div className="admin-stat">{stats.document_count}</div>
               <div className="admin-stat-label">Textbooks</div>
             </div>
-            <div>
+            <div className="admin-stat-card">
+              <div className="stat-icon"><Boxes size={20} aria-hidden /></div>
               <div className="admin-stat">{stats.total_vectors}</div>
               <div className="admin-stat-label">Vector chunks</div>
             </div>
           </div>
 
-          <div className="panel">
+          <div className="panel admin-table-panel">
+            <div className="section-title-row">
+              <div><p className="eyebrow">Index coverage</p><h2>Documents</h2></div>
+              <span className="count-badge">{stats.documents.length}</span>
+            </div>
+            <div className="table-scroll">
             <table className="admin-table">
               <thead>
                 <tr>
@@ -94,11 +108,17 @@ export default function AdminPage() {
                       <td>{doc.status}</td>
                       <td>{doc.total_pages ?? '—'}</td>
                       <td>{doc.chunk_count}</td>
-                      <td className="doc-meta" style={{ maxWidth: 180, overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      <td className="doc-meta storage-cell" title={doc.storage_path || undefined}>
                         {doc.storage_path || '—'}
                       </td>
                       <td>
-                        <button type="button" className="btn btn-ghost" onClick={() => toggleSamples(doc.id)}>
+                        <button
+                          type="button"
+                          className="btn btn-secondary compact-button"
+                          aria-expanded={expanded === doc.id}
+                          onClick={() => toggleSamples(doc.id)}
+                        >
+                          {expanded === doc.id ? <ChevronUp size={15} aria-hidden /> : <ChevronDown size={15} aria-hidden />}
                           {expanded === doc.id ? 'Hide' : 'Sample'}
                         </button>
                       </td>
@@ -107,7 +127,7 @@ export default function AdminPage() {
                       <tr>
                         <td colSpan={6}>
                           {samples[doc.id].map((c, i) => (
-                            <div key={i} className="source-item" style={{ marginBottom: '0.5rem' }}>
+                            <div key={i} className="source-item">
                               <div className="source-item-title">p{c.page_number}</div>
                               <div className="source-excerpt">{c.text}</div>
                             </div>
@@ -119,11 +139,12 @@ export default function AdminPage() {
                 ))}
               </tbody>
             </table>
+            </div>
           </div>
         </>
       )}
 
-      {!stats && !error && <p className="loading">Loading…</p>}
+      {!stats && !error && <p className="loading" aria-live="polite">Loading database details…</p>}
     </div>
   );
 }

@@ -1,5 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
+import { ExternalLink, FileText, RefreshCw, X } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { getFeed } from '../api';
+import Dialog from '../components/Dialog';
 import PdfViewer from '../components/PdfViewer';
 import type { FeedPost } from '../types';
 
@@ -40,17 +43,31 @@ export default function FeedPage() {
   return (
     <div className="feed-page">
       <header className="feed-header">
-        <h1>Home</h1>
-        <p className="feed-sub">Doomscroll the textbook. Chapter accounts post. LeetCode drops in too.</p>
+        <p className="eyebrow">Your learning stream</p>
+        <div className="page-heading-row">
+          <div>
+            <h1>Feed</h1>
+            <p className="feed-sub">Fresh ideas from your textbooks, one chapter at a time.</p>
+          </div>
+          <button type="button" className="icon-button" aria-label="Refresh feed" onClick={load}>
+            <RefreshCw size={19} aria-hidden />
+          </button>
+        </div>
       </header>
 
-      {loading && <p className="muted pad">Loading feed…</p>}
-      {error && <p className="error-banner">{error}</p>}
+      {loading && (
+        <div className="skeleton-list" aria-label="Loading feed" aria-live="polite">
+          {[0, 1, 2].map((item) => <div key={item} className="skeleton-card" />)}
+        </div>
+      )}
+      {error && <p className="error-banner" role="alert">{error}</p>}
 
       {!loading && !posts.length && (
-        <div className="empty-feed">
+        <div className="empty-state">
+          <div className="empty-icon"><FileText size={26} aria-hidden /></div>
           <p className="empty-title">Silence on the wire</p>
-          <p className="muted">Upload a textbook in Library — chapter personas will start posting.</p>
+          <p className="muted">Add a textbook and its chapters will start sharing ideas here.</p>
+          <Link className="btn btn-primary" to="/library">Open Library</Link>
         </div>
       )}
 
@@ -80,12 +97,13 @@ export default function FeedPage() {
                         setPdfPage(Number(post.page_number));
                       }}
                     >
-                      Open p{post.page_number}
+                      <FileText size={15} aria-hidden />
+                      Page {post.page_number}
                     </button>
                   )}
                   {post.leetcode_url && (
                     <a className="post-chip leetcode" href={post.leetcode_url} target="_blank" rel="noreferrer">
-                      LeetCode →
+                      LeetCode <ExternalLink size={14} aria-hidden />
                     </a>
                   )}
                 </div>
@@ -95,19 +113,23 @@ export default function FeedPage() {
         })}
       </div>
 
-      {pdfDocId && (
-        <div className="pdf-modal" role="dialog" aria-modal="true">
-          <div className="pdf-modal-bar">
-            <span>
-              PDF · page {pdfPage}
-            </span>
-            <button type="button" className="btn-ghost" onClick={() => setPdfDocId(null)}>
-              Close
-            </button>
+      <Dialog
+        open={pdfDocId !== null}
+        onClose={() => setPdfDocId(null)}
+        labelledBy="feed-pdf-title"
+        className="pdf-dialog"
+      >
+        <div className="dialog-header">
+          <div>
+            <p className="eyebrow">Source document</p>
+            <h2 id="feed-pdf-title">Page {pdfPage}</h2>
           </div>
-          <PdfViewer documentId={pdfDocId} page={pdfPage} />
+          <button type="button" className="icon-button" aria-label="Close PDF" onClick={() => setPdfDocId(null)}>
+            <X size={20} aria-hidden />
+          </button>
         </div>
-      )}
+        <PdfViewer documentId={pdfDocId} page={pdfPage} onPageChange={setPdfPage} />
+      </Dialog>
     </div>
   );
 }

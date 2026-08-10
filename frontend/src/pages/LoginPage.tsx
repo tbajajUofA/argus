@@ -1,3 +1,4 @@
+import { ArrowRight, BookOpen, Github, Sparkles } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
 
 const ERRORS: Record<string, string> = {
@@ -38,18 +39,25 @@ export default function LoginPage() {
     <div className="login-page">
       <div className="login-noise" aria-hidden />
       <div className="login-hero">
-        <p className="login-kicker">Personal · Textbook · Social</p>
+        <div className="login-mark" aria-hidden><BookOpen size={27} /></div>
+        <p className="login-kicker">A calmer way to study</p>
         <h1 className="login-brand">ARGUS</h1>
         <p className="login-lead">
-          Doomscroll your textbooks. Chapter accounts post. Study packs on demand. Built for one brain: yours.
+          Turn dense textbooks into a living feed, focused study packs, and source-linked answers.
         </p>
-        {error && ERRORS[error] && <p className="login-error">{ERRORS[error]}</p>}
-        <a href="/auth/google" className="btn btn-accent login-google">
+        <div className="login-features" aria-label="Highlights">
+          <span><Sparkles size={15} aria-hidden /> Chapter insights</span>
+          <span>Source-linked</span>
+          <span>Built for focus</span>
+        </div>
+        {error && ERRORS[error] && <p className="login-error" role="alert">{ERRORS[error]}</p>}
+        <a href="/auth/google" className="btn btn-primary login-google">
           <GoogleIcon />
-          Sign in with Google
+          <span>Continue with Google</span>
+          <ArrowRight size={17} aria-hidden />
         </a>
         <a href={REPO_URL} target="_blank" rel="noreferrer" className="login-repo">
-          Source on GitHub
+          <Github size={15} aria-hidden /> View source
         </a>
       </div>
     </div>
